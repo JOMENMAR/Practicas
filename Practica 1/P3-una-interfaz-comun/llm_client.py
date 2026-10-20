@@ -18,9 +18,9 @@ OPENROUTER = "https://openrouter.ai/api/v1"
 # va en .env, p. ej. "openai/gpt-5.4-mini". Rellénalos con https://openrouter.ai/models:
 # cambian a menudo y no conviene fiarse de la memoria.
 PRECIOS: dict[str, tuple[float, float]] = {
-    "openai/gpt-5.4-mini": (0.00000075, 0.0000045),
-    "anthropic/claude-haiku-4.5": (0.000001, 0.000005),
-    "google/gemini-3.8-flash": (0.00000075, 0.00000375),
+    "openai/gpt-5.4-mini": (0.75, 4.5),
+    "anthropic/claude-haiku-4.5": (1.0, 5.0),
+    "google/gemini-3.8-flash": (0.825, 4.125),
 }
 
 
@@ -86,6 +86,7 @@ class LLM:
                 model=self.modelo,
                 instructions=sistema,
                 input=prompt,
+                **({} if max_tokens is None else {"max_output_tokens": max_tokens}),
                 **extra,
             )
             texto, t_in, t_out = r.output_text, r.usage.input_tokens, r.usage.output_tokens
@@ -104,7 +105,10 @@ class LLM:
             texto = "".join(b.text for b in r.content if b.type == "text")
             t_in, t_out = r.usage.input_tokens, r.usage.output_tokens
         elif self.formato == "interactions":
-            config = {"generation_config": extra} if extra else {}
+            generation_config = dict(extra)
+            if max_tokens is not None:
+                generation_config["max_output_tokens"] = max_tokens
+            config = {"generation_config": generation_config} if generation_config else {}
             r = self._c.interactions.create(
                 model=self.modelo, system_instruction=sistema, input=prompt, **config
             )
@@ -114,6 +118,7 @@ class LLM:
             r = self._c.chat.completions.create(
                 model=self.modelo,
                 messages=[{"role": "system", "content": sistema}, {"role": "user", "content": prompt}],
+                **({} if max_tokens is None else {"max_tokens": max_tokens}),
                 **extra,
             )
             texto = r.choices[0].message.content

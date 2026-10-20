@@ -17,12 +17,26 @@ for evento in openai.OpenAI().responses.create(
         print(evento.delta, end="", flush=True)
 
 print("\n--- Claude")
-with anthropic.Anthropic().messages.stream(
-    model=os.environ["ANTHROPIC_MODEL"], max_tokens=512,
-    messages=[{"role": "user", "content": PREGUNTA}],
-) as flujo:
-    for trozo in flujo.text_stream:
-        print(trozo, end="", flush=True)
+if "openrouter.ai" in os.getenv("ANTHROPIC_BASE_URL", "").lower():
+    # OpenRouter termina el flujo de Anthropic con un marcador que su SDK no interpreta.
+    cliente = openai.OpenAI(
+        base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
+        api_key=os.environ["OPENROUTER_API_KEY"],
+    )
+    for trozo in cliente.chat.completions.create(
+        model=os.environ["ANTHROPIC_MODEL"],
+        messages=[{"role": "user", "content": PREGUNTA}],
+        stream=True,
+    ):
+        if trozo.choices and trozo.choices[0].delta.content:
+            print(trozo.choices[0].delta.content, end="", flush=True)
+else:
+    with anthropic.Anthropic().messages.stream(
+        model=os.environ["ANTHROPIC_MODEL"], max_tokens=512,
+        messages=[{"role": "user", "content": PREGUNTA}],
+    ) as flujo:
+        for trozo in flujo.text_stream:
+            print(trozo, end="", flush=True)
 
 print("\n--- Gemini")
 if os.getenv("GEMINI_API_KEY"):  # opcional: API nativa de Gemini
