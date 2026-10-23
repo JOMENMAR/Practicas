@@ -18,11 +18,10 @@ OPENROUTER = "https://openrouter.ai/api/v1"
 # va en .env, p. ej. "openai/gpt-5.4-mini". Rellénalos con https://openrouter.ai/models:
 # cambian a menudo y no conviene fiarse de la memoria.
 PRECIOS: dict[str, tuple[float, float]] = {
-    "openai/gpt-5.4-mini": (0.75, 4.5),
-    "anthropic/claude-haiku-4.5": (1.0, 5.0),
-    "google/gemini-3.8-flash": (0.825, 4.125),
+    "openai/gpt-5.4-mini": (0.00000075, 0.0000045),
+    "anthropic/claude-haiku-4.5": (0.000001, 0.000005),
+    "google/gemini-3.8-flash": (0.00000075, 0.00000375),
 }
-
 
 @dataclass
 class Respuesta:
